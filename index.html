@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Brazos County Foreclosure Search</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f5f4f0;
+      color: #1a1a18;
+      min-height: 100vh;
+    }
+    header {
+      background: #1a3a5c;
+      color: #fff;
+      padding: 1.25rem 1.5rem;
+    }
+    header h1 { font-size: 20px; font-weight: 500; }
+    header p { font-size: 13px; opacity: 0.7; margin-top: 2px; }
+    .main { max-width: 900px; margin: 0 auto; padding: 1.5rem; }
+
+    /* Stats */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 10px;
+      margin-bottom: 1.5rem;
+    }
+    .stat {
+      background: #fff;
+      border-radius: 8px;
+      border: 1px solid #e0dfdb;
+      padding: 0.75rem 1rem;
+    }
+    .stat-label { font-size: 11px; color: #888; margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.04em; }
+    .stat-value { font-size: 22px; font-weight: 500; color: #1a3a5c; }
+
+    /* Controls */
+    .controls { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1rem; }
+    .controls input, .controls select {
+      padding: 8px 12px;
+      border: 1px solid #d0cfc9;
+      border-radius: 6px;
+      font-size: 14px;
+      background: #fff;
+      color: #1a1a18;
+    }
+    .controls input { flex: 1; min-width: 220px; }
+
+    .chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 1rem; align-items: center; }
+    .chips label { font-size: 12px; color: #888; }
+    .chip {
+      font-size: 12px;
+      padding: 4px 12px;
+      border-radius: 99px;
+      border: 1px solid #d0cfc9;
+      background: #fff;
+      cursor: pointer;
+      color: #555;
+      transition: all 0.12s;
+    }
+    .chip.active { background: #1a3a5c; color: #fff; border-color: #1a3a5c; }
+    .chip:hover:not(.active) { border-color: #888; }
+
+    .range-row { display: flex; gap: 6px; align-items: center; margin-bottom: 1.25rem; }
+    .range-row label { font-size: 12px; color: #888; white-space: nowrap; }
+    .range-row input { width: 110px; padding: 7px 10px; border: 1px solid #d0cfc9; border-radius: 6px; font-size: 13px; }
+
+    /* Cards */
+    .cards { display: flex; flex-direction: column; gap: 10px; }
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      border: 1px solid #e0dfdb;
+      padding: 1rem 1.25rem;
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+    .card:hover { border-color: #888; }
+    .card.highlight { border-color: #d4a017; background: #fffdf0; }
+    .card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 8px; }
+    .card-addr { font-weight: 500; font-size: 15px; }
+    .card-city { font-size: 12px; color: #888; margin-top: 2px; }
+    .card-amount { font-size: 15px; font-weight: 600; color: #1a3a5c; white-space: nowrap; }
+    .badges { display: flex; gap: 6px; flex-wrap: wrap; }
+    .badge {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 99px;
+      border: 1px solid #e0dfdb;
+      background: #f5f4f0;
+      color: #555;
+    }
+    .badge.sub { background: #e6f1fb; color: #185fa5; border-color: #b5d4f4; }
+    .badge.sheriff { background: #faeeda; color: #854f0b; border-color: #fac775; }
+    .badge.trust { background: #eaf3de; color: #3b6d11; border-color: #c0dd97; }
+    .badge.cs { background: #eeedfe; color: #534ab7; border-color: #afa9ec; }
+
+    /* Detail panel */
+    .detail {
+      margin-top: 12px;
+      background: #f5f4f0;
+      border-radius: 6px;
+      padding: 0.75rem 1rem;
+      display: none;
+      font-size: 13px;
+    }
+    .detail.open { display: block; }
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 5px 0;
+      border-bottom: 1px solid #e0dfdb;
+      gap: 12px;
+    }
+    .detail-row:last-child { border-bottom: none; }
+    .detail-key { color: #888; min-width: 130px; }
+    .detail-val { color: #1a1a18; text-align: right; }
+    .analyze-btn {
+      margin-top: 10px;
+      padding: 6px 14px;
+      font-size: 12px;
+      border: 1px solid #1a3a5c;
+      border-radius: 6px;
+      background: transparent;
+      color: #1a3a5c;
+      cursor: pointer;
+      display: inline-block;
+    }
+    .analyze-btn:hover { background: #1a3a5c; color: #fff; }
+    .empty { text-align: center; padding: 3rem; color: #888; font-size: 14px; }
+
+    @media (max-width: 600px) {
+      .card-top { flex-direction: column; }
+      .detail-row { flex-direction: column; }
+      .detail-val { text-align: left; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Brazos County Foreclosure Search</h1>
+    <p>September 2026 — Sale date: September 1, 2026</p>
+  </header>
+
+  <div class="main">
+    <div class="stats">
+      <div class="stat"><div class="stat-label">Notices</div><div class="stat-value" id="s-total">—</div></div>
+      <div class="stat"><div class="stat-label">Bryan</div><div class="stat-value" id="s-bryan">—</div></div>
+      <div class="stat"><div class="stat-label">College Station</div><div class="stat-value" id="s-cs">—</div></div>
+      <div class="stat"><div class="stat-label">Avg loan</div><div class="stat-value" id="s-avg">—</div></div>
+    </div>
+
+    <div class="controls">
+      <input type="text" id="q" placeholder="Search address, debtor, lender…" oninput="render()" />
+      <select id="city" onchange="render()">
+        <option value="">All cities</option>
+        <option value="Bryan">Bryan</option>
+        <option value="College Station">College Station</option>
+      </select>
+      <select id="sort" onchange="render()">
+        <option value="amount-desc">Loan: high → low</option>
+        <option value="amount-asc">Loan: low → high</option>
+        <option value="addr">Address A–Z</option>
+      </select>
+    </div>
+
+    <div class="chips">
+      <label>Type:</label>
+      <span class="chip active" data-val="" onclick="setChip(this)">All</span>
+      <span class="chip" data-val="Substitute trustee" onclick="setChip(this)">Substitute trustee</span>
+      <span class="chip" data-val="Sheriff" onclick="setChip(this)">Sheriff's sale</span>
+      <span class="chip" data-val="Trustee" onclick="setChip(this)">Trustee</span>
+    </div>
+
+    <div class="range-row">
+      <label>Loan range:</label>
+      <input type="number" id="min-amt" placeholder="Min $" oninput="render()" step="10000" />
+      <span style="color:#aaa">–</span>
+      <input type="number" id="max-amt" placeholder="Max $" oninput="render()" step="10000" />
+    </div>
+
+    <div class="cards" id="cards"></div>
+  </div>
+
+  <script src="data.js"></script>
+  <script>
+    let activeType = "";
+
+    function setChip(el) {
+      document.querySelectorAll(".chip").forEach(c => c.classList.remove("active"));
+      el.classList.add("active");
+      activeType = el.dataset.val;
+      render();
+    }
+
+    function fmt(n) {
+      return "$" + Math.round(n).toLocaleString();
+    }
+
+    function badgeClass(type) {
+      if (type === "Sheriff") return "badge sheriff";
+      if (type === "Substitute trustee") return "badge sub";
+      return "badge trust";
+    }
+
+    function render() {
+      const q = document.getElementById("q").value.toLowerCase();
+      const city = document.getElementById("city").value;
+      const sort = document.getElementById("sort").value;
+      const minAmt = parseFloat(document.getElementById("min-amt").value) || 0;
+      const maxAmt = parseFloat(document.getElementById("max-amt").value) || Infinity;
+
+      let results = DATA.filter(d => {
+        const text = [d.address, d.city, d.debtor, d.lender, d.subdivision, d.notes].join(" ").toLowerCase();
+        if (q && !text.includes(q)) return false;
+        if (city && !d.city.includes(city)) return false;
+        if (activeType && d.type !== activeType) return false;
+        if (d.amount < minAmt || d.amount > maxAmt) return false;
+        return true;
+      });
+
+      if (sort === "amount-desc") results.sort((a, b) => b.amount - a.amount);
+      else if (sort === "amount-asc") results.sort((a, b) => a.amount - b.amount);
+      else results.sort((a, b) => a.address.localeCompare(b.address));
+
+      const bryan = results.filter(d => d.city === "Bryan").length;
+      const cs = results.filter(d => d.city === "College Station").length;
+      const avg = results.length ? Math.round(results.reduce((s, d) => s + d.amount, 0) / results.length / 1000) : 0;
+
+      document.getElementById("s-total").textContent = results.length;
+      document.getElementById("s-bryan").textContent = bryan;
+      document.getElementById("s-cs").textContent = cs;
+      document.getElementById("s-avg").textContent = avg ? "$" + avg + "K" : "—";
+
+      const container = document.getElementById("cards");
+      if (!results.length) {
+        container.innerHTML = '<div class="empty">No matching foreclosure notices found.</div>';
+        return;
+      }
+
+      container.innerHTML = results.map(d => `
+        <div class="card ${d.highlight ? "highlight" : ""}" onclick="toggle(${d.id})">
+          <div class="card-top">
+            <div>
+              <div class="card-addr">${d.address}</div>
+              <div class="card-city">${d.city}, ${d.state} ${d.zip}</div>
+            </div>
+            <div class="card-amount">${fmt(d.amount)}</div>
+          </div>
+          <div class="badges">
+            <span class="${badgeClass(d.type)}">${d.type}</span>
+            <span class="badge ${d.city === "College Station" ? "cs" : ""}">${d.city}</span>
+            <span class="badge">${d.debtor.length > 40 ? d.debtor.substring(0, 40) + "…" : d.debtor}</span>
+          </div>
+          <div class="detail" id="detail-${d.id}">
+            <div class="detail-row"><span class="detail-key">Full address</span><span class="detail-val">${d.address}, ${d.city}, TX ${d.zip}</span></div>
+            <div class="detail-row"><span class="detail-key">Debtor</span><span class="detail-val">${d.debtor}</span></div>
+            <div class="detail-row"><span class="detail-key">Lender / mortgagee</span><span class="detail-val">${d.lender}</span></div>
+            <div class="detail-row"><span class="detail-key">Servicer</span><span class="detail-val">${d.servicer}</span></div>
+            <div class="detail-row"><span class="detail-key">Original principal</span><span class="detail-val">${fmt(d.amount)}</span></div>
+            <div class="detail-row"><span class="detail-key">Deed date</span><span class="detail-val">${d.deedDate}</span></div>
+            <div class="detail-row"><span class="detail-key">Instrument</span><span class="detail-val">${d.instrument}</span></div>
+            <div class="detail-row"><span class="detail-key">Property description</span><span class="detail-val">${d.subdivision}</span></div>
+            <div class="detail-row"><span class="detail-key">Notes</span><span class="detail-val">${d.notes}</span></div>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function toggle(id) {
+      document.getElementById("detail-" + id).classList.toggle("open");
+    }
+
+    render();
+  </script>
+</body>
+</html>
